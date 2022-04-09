@@ -21,5 +21,48 @@
     "react",
     "@typescript-eslint"
   ],
-  "rules": {}
+  "rules": {
+    "semi": [
+      "error",
+      "always"
+    ],
+    "no-template-curly-in-string": "error",
+    "no-unmodified-loop-condition": "error",
+    "no-alert": "error",
+    "no-var": "error",
+    "no-case-declarations": "error",
+    "no-duplicate-case": "error",
+    "no-duplicate-imports": "error",
+    "no-dupe-args": "error",
+    "no-dupe-class-members": "error",
+    "no-dupe-keys": "error",
+    "no-empty": "error",
+    "no-empty-character-class": "error",
+    "no-empty-function": "error",
+    "no-empty-pattern": "error",
+    "no-multiple-empty-lines": "error",
+    "eqeqeq": [
+      "error",
+      "always",
+      {
+        "null": "always"
+      }
+    ],
+    "no-constant-condition": [
+      "error",
+      {
+        "checkLoops": false
+      }
+    ],
+    "no-lonely-if": "error",
+    "wrap-iife": [
+      "error",
+      "inside"
+    ],
+    "curly": [
+      "error",
+      "multi-line",
+      "consistent"
+    ]
+  }
 }
