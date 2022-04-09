@@ -2,11 +2,15 @@ import { ReactNode } from 'react';
 import { randomInt } from '../util/random';
 import BoardIndex from '../../generated/BoardIndex';
 
+interface Coordinate {
+  row: RowOrColIndex;
+  col: RowOrColIndex;
+}
+
 type Board = Row[];
 type NullableNumber = number | undefined;
 type Row = NullableNumber[];
 type RowOrColIndex = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
-type BoxNumber = RowOrColIndex;
 const generateBoard = (numberOfGivenDigits: number): Board => {
   const board = createBaseBoard(randomInt(5, 10));
   return board;
@@ -56,39 +60,58 @@ const findNeighbours = (
 
   return result;
 };
-
-const getBoxNumber = (
-  board: Board,
+/// Returns the top left coordinate that the target cell is in.
+const getBoxTopLeftCoordinate = (
   row: RowOrColIndex,
   col: RowOrColIndex,
-): BoxNumber => {
-  if (row < 3) {
-    if (col < 3) {
-      return 0;
-    }
-    if (col < 6) {
-      return 1;
-    }
-    return 2;
-  }
-  if (row < 6) {
-    if (col < 3) {
-      return 3;
-    }
-    if (col < 6) {
-      return 4;
-    }
-    return 5;
-  }
-  if (col < 3) {
-    return 6;
-  }
-  if (col < 6) {
-    return 7;
-  }
-  return 8;
+): Coordinate => {
+  return {
+    row: ((row / 3) * 3) as RowOrColIndex,
+    col: ((col / 3) * 3) as RowOrColIndex,
+  };
 };
 
+const getBoxCoordinates = (
+  row: RowOrColIndex,
+  col: RowOrColIndex,
+): Coordinate[] => {
+  const boxNumber = getBoxTopLeftCoordinate(row, col);
+  row = boxNumber.row;
+  col = boxNumber.col;
+
+  /* eslint-disable @typescript-eslint/no-non-null-assertion */
+  return [
+    { row, col },
+    { row: addRowIndex(row, 1)!, col },
+    { row: addRowIndex(row, 2)!, col },
+    {
+      row,
+      col: addRowIndex(col, 1)!,
+    },
+    { row: addRowIndex(row, 1)!, col: addRowIndex(col, 1)! },
+    {
+      row: addRowIndex(row, 2)!,
+      col: addRowIndex(col, 1)!,
+    },
+    { row, col: addRowIndex(col, 2)! },
+    {
+      row: addRowIndex(row, 1)!,
+      col: addRowIndex(col, 2)!,
+    },
+    { row: addRowIndex(row, 2)!, col: addRowIndex(col, 2)! },
+  ];
+  /* eslint-enable @typescript-eslint/no-non-null-assertion */
+};
+
+const addRowIndex = (
+  row: RowOrColIndex,
+  toAdd: RowOrColIndex,
+): RowOrColIndex | undefined => {
+  if (row + toAdd > 8) {
+    return undefined;
+  }
+  return (row + toAdd) as RowOrColIndex;
+};
 const createBaseBoard = (numberOfRandomDigits: number): Board => {
   const board: Board = [];
 
