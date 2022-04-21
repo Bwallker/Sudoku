@@ -1,156 +1,142 @@
-import { ReactNode } from 'react';
-import { randomInt } from '../util/random';
-import BoardIndex from '../../generated/BoardIndex';
+import {
+	difference as _difference,
+	shuffle,
+	sortedUniq as _sortedUniq,
+	sortedUniqBy as _sortedUniqBy,
+	times as _times,
+} from 'lodash';
+
+const total = 81;
+const size = 9;
+const third = 3;
+const validValues = [1, 2, 3, 4, 5, 6, 7, 8, 9] as const;
+export type SudokuDigit = typeof validValues[number] | 0;
+export type FilledSudokuDigit = Exclude<SudokuDigit, 0>;
+export type RowOrColIndex = Exclude<SudokuDigit, 9>;
 
 interface Coordinate {
-  row: RowOrColIndex;
-  col: RowOrColIndex;
+	row: RowOrColIndex;
+	col: RowOrColIndex;
 }
 
-type Board = Row[];
-type NullableNumber = number | undefined;
-type Row = NullableNumber[];
-type RowOrColIndex = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
-const generateBoard = (numberOfGivenDigits: number): Board => {
-  const board = createBaseBoard(randomInt(5, 10));
-  return board;
-};
+class SudokuCell {
+	value: SudokuDigit = 0;
+	position: Coordinate;
+	neighbors: Array<Coordinate> = [];
 
-const findNextValidDigit = (
-  board: Board,
-  index: BoardIndex,
-): number | undefined => {
-  const row = index / 9;
-  const col = index % 9;
-  const neighbours = findNeighbours(
-    board,
-    row as RowOrColIndex,
-    col as RowOrColIndex,
-  );
-  for (let i = 1; i < 10; i++) {
-    if (neighbours.has(i)) {
-      continue;
-    }
-    return i;
-  }
-  return undefined;
-};
+	constructor(position: Coordinate) {
+		this.position = position;
+		this.value = 0;
 
-const findNeighbours = (
-  board: Board,
-  row: RowOrColIndex,
-  col: RowOrColIndex,
-): Set<number> => {
-  const result = new Set<number>();
+		// identify block top left
+		const rowBase = Math.floor(position.row / third) * third;
+		const colBase = Math.floor(position.col / third) * third;
 
-  for (let i = 0; i < 9; i++) {
-    const num = board[i]?.[col];
-    if (num === undefined) {
-      continue;
-    }
-    result.add(num);
-  }
-  for (let i = 0; i < 9; i++) {
-    const num = board[row]?.[i];
-    if (num === undefined) {
-      continue;
-    }
-    result.add(num);
-  }
+		const blockNeighbors: Coordinate[] = [];
+		_times(size, (index: number) => {
+			const row = (Math.floor(index / third) + rowBase) as RowOrColIndex;
+			const col = ((index % third) + colBase) as RowOrColIndex;
 
-  return result;
-};
-/// Returns the top left coordinate that the target cell is in.
-const getBoxTopLeftCoordinate = (
-  row: RowOrColIndex,
-  col: RowOrColIndex,
-): Coordinate => {
-  return {
-    row: ((row / 3) * 3) as RowOrColIndex,
-    col: ((col / 3) * 3) as RowOrColIndex,
-  };
-};
+			if (row !== position.row || col !== position.col) {
+				blockNeighbors.push({ row, col });
+			}
+		});
 
-const getBoxCoordinates = (
-  row: RowOrColIndex,
-  col: RowOrColIndex,
-): Coordinate[] => {
-  const boxNumber = getBoxTopLeftCoordinate(row, col);
-  row = boxNumber.row;
-  col = boxNumber.col;
+		// identify row neighbors
+		const rowNeighbors = _times(size, (row) => ({
+			row: row as RowOrColIndex,
+			col: position.col,
+		}));
+		rowNeighbors.splice(position.row, 1);
 
-  /* eslint-disable @typescript-eslint/no-non-null-assertion */
-  return [
-    { row, col },
-    { row: addRowIndex(row, 1)!, col },
-    { row: addRowIndex(row, 2)!, col },
-    {
-      row,
-      col: addRowIndex(col, 1)!,
-    },
-    { row: addRowIndex(row, 1)!, col: addRowIndex(col, 1)! },
-    {
-      row: addRowIndex(row, 2)!,
-      col: addRowIndex(col, 1)!,
-    },
-    { row, col: addRowIndex(col, 2)! },
-    {
-      row: addRowIndex(row, 1)!,
-      col: addRowIndex(col, 2)!,
-    },
-    { row: addRowIndex(row, 2)!, col: addRowIndex(col, 2)! },
-  ];
-  /* eslint-enable @typescript-eslint/no-non-null-assertion */
-};
+		// identify col neighbors
+		const colNeighbors = _times(size, (col) => ({
+			row: position.row,
+			col: col as RowOrColIndex,
+		}));
+		colNeighbors.splice(position.col, 1);
 
-const addRowIndex = (
-  row: RowOrColIndex,
-  toAdd: RowOrColIndex,
-): RowOrColIndex | undefined => {
-  if (row + toAdd > 8) {
-    return undefined;
-  }
-  return (row + toAdd) as RowOrColIndex;
-};
-const createBaseBoard = (numberOfRandomDigits: number): Board => {
-  const board: Board = [];
+		// all neighbors
+		this.neighbors = _sortedUniqBy(
+			[...rowNeighbors, ...colNeighbors, ...blockNeighbors],
+			(c) => `${c.row}:${c.col}`,
+		);
+	}
+}
 
-  for (let i = 0; i < 9; i++) {
-    const row: Row = [];
+export class SudokuBoard {
+	cells: SudokuCell[];
 
-    for (let j = 0; j < 9; j++) {
-      row.push(undefined);
-    }
-    board.push(row);
-  }
-  let numberOfGeneratedDigits = 0;
-  while (true) {
-    if (numberOfGeneratedDigits === numberOfRandomDigits) {
-      break;
-    }
-    const randomRow = randomInt(0, 9);
-    const randomCol = randomInt(0, 9);
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    if (board[randomRow]![randomCol]! !== 0) {
-      continue;
-    }
-    const randomDigit = randomInt(1, 10);
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    board[randomRow]![randomCol]! = randomDigit;
-    numberOfGeneratedDigits++;
-  }
-  console.log(board);
-  return board;
-};
+	constructor() {
+		this.cells = _times(total, (index) => {
+			const position = this.resolveIndex(index);
+			return new SudokuCell(position);
+		});
+	}
 
-export const boardToString = (board: Board) => {
-  const res: ReactNode[] = [];
-  let i = 0;
-  for (const row of board) {
-    res.push(<p key={i++}>{row}</p>);
-  }
+	serialize() {
+		return this.cells.map((c) => c.value).join('');
+	}
 
-  return res;
+	clear() {
+		for (const cell of this.cells) {
+			cell.value = 0;
+		}
+	}
+
+	fillCells() {
+		return this.doFillCells(0);
+	}
+
+	doFillCells(index: number): boolean {
+		const cell = this.cells[index];
+		const neighborValues = _sortedUniq(
+			cell!.neighbors.map((n) => this.at(n).value),
+		);
+		const remainingOptions = shuffle(_difference(validValues, neighborValues));
+		for (const option of remainingOptions) {
+			cell!.value = option;
+
+			// either this is the last cell, or the rest are good
+			if (index === this.cells.length - 1) {
+				return true;
+			}
+			if (this.doFillCells(index + 1)) {
+				return true;
+			}
+		}
+
+		cell!.value = 0;
+		return false;
+	}
+
+	resolveIndex(index: number): Coordinate {
+		return {
+			row: Math.floor(index / size) as RowOrColIndex,
+			col: (index % size) as RowOrColIndex,
+		};
+	}
+
+	resolvePosition(position: Coordinate): number {
+		return position.row * size + position.col;
+	}
+
+	/**
+	 *
+	 */
+	at(c: Coordinate): SudokuCell {
+		return this.cells[this.resolvePosition(c)]!;
+	}
+
+	atIndex(index: number): SudokuCell {
+		return this.cells[index]!;
+	}
+}
+
+const generateBoard = (): SudokuBoard => {
+	const board = new SudokuBoard();
+	board.fillCells();
+	return board;
 };
 
 export default generateBoard;

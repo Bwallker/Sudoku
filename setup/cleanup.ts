@@ -15,6 +15,10 @@ const cleanup = (): void => {
       fs.realpathSync(sourceDir),
     )
   );
+  fs.rmSync(path.resolve(__dirname, '..', 'generated'), {
+    force: true,
+    recursive: true,
+  });
 };
 
 const recurse = (

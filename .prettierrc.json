@@ -3,5 +3,6 @@
   "trailingComma": "all",
   "quoteProps": "consistent",
   "jsxSingleQuote": true,
-  "bracketSpacing": true
+  "bracketSpacing": true,
+  "useTabs": true
 }

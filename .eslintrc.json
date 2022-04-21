@@ -63,6 +63,12 @@
       "error",
       "multi-line",
       "consistent"
-    ]
+    ],
+    "arrow-body-style": [
+      "error",
+      "as-needed"
+    ],
+    "@typescript-eslint/no-non-null-assertion": "off",
+    "@typescript-eslint/ban-ts-comment": "off"
   }
 }
