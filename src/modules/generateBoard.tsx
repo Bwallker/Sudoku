@@ -5,6 +5,8 @@ import {
 	sortedUniqBy as _sortedUniqBy,
 	times as _times,
 } from 'lodash';
+import BoardIndex from '../../generated/BoardIndex';
+import { randomInt } from '../util/random';
 
 const total = 81;
 const size = 9;
@@ -23,8 +25,10 @@ class SudokuCell {
 	value: SudokuDigit = 0;
 	position: Coordinate;
 	neighbors: Array<Coordinate> = [];
+	board: SudokuBoard;
 
-	constructor(position: Coordinate) {
+	constructor(position: Coordinate, board: SudokuBoard) {
+		this.board = board;
 		this.position = position;
 		this.value = 0;
 
@@ -38,7 +42,10 @@ class SudokuCell {
 			const col = ((index % third) + colBase) as RowOrColIndex;
 
 			if (row !== position.row || col !== position.col) {
-				blockNeighbors.push({ row, col });
+				blockNeighbors.push({
+					row,
+					col,
+				});
 			}
 		});
 
@@ -62,6 +69,14 @@ class SudokuCell {
 			(c) => `${c.row}:${c.col}`,
 		);
 	}
+
+	isValid(): boolean {
+		const neighborValues = _sortedUniq(
+			this.neighbors.map((n) => this.board.at(n).value),
+		);
+		const diff = _difference(validValues, neighborValues);
+		return diff.length === 1 && diff[0] === this.value;
+	}
 }
 
 export class SudokuBoard {
@@ -69,8 +84,8 @@ export class SudokuBoard {
 
 	constructor() {
 		this.cells = _times(total, (index) => {
-			const position = this.resolveIndex(index);
-			return new SudokuCell(position);
+			const position = this.resolveIndex(index as BoardIndex);
+			return new SudokuCell(position, this);
 		});
 	}
 
@@ -88,7 +103,20 @@ export class SudokuBoard {
 		return this.doFillCells(0);
 	}
 
-	doFillCells(index: number): boolean {
+	removeCells(numberOfPrefilledDigits: number) {
+		let numberOfDigitsToRemove = 81 - numberOfPrefilledDigits;
+		while (numberOfDigitsToRemove > 0) {
+			const randomIndex = randomInt(0, 81);
+			const atIndex = this.atIndex(randomIndex as BoardIndex);
+			if (atIndex.value === 0) {
+				continue;
+			}
+			numberOfDigitsToRemove--;
+			atIndex.value = 0;
+		}
+	}
+
+	doFillCells(index: BoardIndex): boolean {
 		const cell = this.cells[index];
 		const neighborValues = _sortedUniq(
 			cell!.neighbors.map((n) => this.at(n).value),
@@ -101,7 +129,7 @@ export class SudokuBoard {
 			if (index === this.cells.length - 1) {
 				return true;
 			}
-			if (this.doFillCells(index + 1)) {
+			if (this.doFillCells((index + 1) as BoardIndex)) {
 				return true;
 			}
 		}
@@ -110,7 +138,7 @@ export class SudokuBoard {
 		return false;
 	}
 
-	resolveIndex(index: number): Coordinate {
+	resolveIndex(index: BoardIndex): Coordinate {
 		return {
 			row: Math.floor(index / size) as RowOrColIndex,
 			col: (index % size) as RowOrColIndex,
@@ -128,14 +156,27 @@ export class SudokuBoard {
 		return this.cells[this.resolvePosition(c)]!;
 	}
 
-	atIndex(index: number): SudokuCell {
+	atIndex(index: BoardIndex): SudokuCell {
 		return this.cells[index]!;
+	}
+
+	setCoordinate(c: Coordinate, val: SudokuDigit) {
+		this.cells[this.resolvePosition(c)]!.value = val;
+	}
+
+	setIndex(index: BoardIndex, val: SudokuDigit) {
+		this.cells[index]!.value = val;
+	}
+
+	isValid(): boolean {
+		return this.cells.every((x) => x.isValid());
 	}
 }
 
-const generateBoard = (): SudokuBoard => {
+const generateBoard = (numberOfPrefilledDigits: number): SudokuBoard => {
 	const board = new SudokuBoard();
 	board.fillCells();
+	board.removeCells(numberOfPrefilledDigits);
 	return board;
 };
 

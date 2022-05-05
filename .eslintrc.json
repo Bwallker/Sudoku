@@ -19,13 +19,10 @@
   },
   "plugins": [
     "react",
-    "@typescript-eslint"
+    "@typescript-eslint",
+    "prettier"
   ],
   "rules": {
-    "semi": [
-      "error",
-      "always"
-    ],
     "no-template-curly-in-string": "error",
     "no-unmodified-loop-condition": "error",
     "no-alert": "error",
@@ -36,7 +33,7 @@
     "no-dupe-args": "error",
     "no-dupe-class-members": "error",
     "no-dupe-keys": "error",
-    "no-empty": "error",
+    "no-empty": "off",
     "no-empty-character-class": "error",
     "no-empty-function": "error",
     "no-empty-pattern": "error",
@@ -69,6 +66,12 @@
       "as-needed"
     ],
     "@typescript-eslint/no-non-null-assertion": "off",
-    "@typescript-eslint/ban-ts-comment": "off"
+    "@typescript-eslint/ban-ts-comment": "off",
+    "@typescript-eslint/semi": [
+      "error",
+      "always"
+    ],
+    "semi": "off",
+    "prettier/prettier": "error"
   }
 }

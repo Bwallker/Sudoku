@@ -14,22 +14,22 @@ const Play = () => {
 			'The difficulty you provided was not recognised',
 		);
 	}
-	const board = generateBoard();
+	const board = generateBoard(numberOfPrefilledDigits(difficulty));
 
 	return <CentralElement>{<Board board={board} />}</CentralElement>;
 };
 // @ts-ignore
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-const difficultyToNumberOfDigits = (difficulty: Difficulty) => {
+const numberOfPrefilledDigits = (difficulty: Difficulty) => {
 	switch (difficulty) {
+		case 'super_easy':
+			return 78;
 		case 'easy':
-			return 8;
+			return 70;
 		case 'medium':
-			return 5;
+			return 55;
 		case 'hard':
-			return 2;
-		default:
-			return 0;
+			return 30;
 	}
 };
 
