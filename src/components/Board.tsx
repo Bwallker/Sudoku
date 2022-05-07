@@ -1,4 +1,4 @@
-import { Dispatch, ReactNode, SetStateAction, useState } from 'react';
+import { ReactNode, useState } from 'react';
 import { SudokuBoard } from '../modules/generateBoard';
 import Cell from './Cell';
 import classNames from 'classnames';
@@ -6,13 +6,24 @@ import BoardIndex from '../../generated/BoardIndex';
 // @ts-ignore
 import Modal from 'react-modal';
 import { Button } from 'react-bootstrap';
-import { NextRouter, useRouter } from 'next/router';
+import { useRouter } from 'next/router';
+import useWindowDimensions from '../util/useWindowDimensions';
+import ErrorMessage from '../util/ErrorMessage';
 
-const createBoard = (
-	state: State,
-	setState: Dispatch<SetStateAction<State>>,
-	router: NextRouter,
-) => {
+interface Props {
+	board: SudokuBoard;
+}
+
+export interface State {
+	board: SudokuBoard;
+}
+
+const Board = (props: Props) => {
+	const [state, setState] = useState<State>({
+		board: props.board,
+	});
+	const router = useRouter();
+	const dimensions = useWindowDimensions();
 	let i = 0;
 	const res: ReactNode[] = [];
 	const boxes: ReactNode[] = [];
@@ -38,8 +49,14 @@ const createBoard = (
 				boxRows.push(rowArr);
 			}
 			const classForBoxRow = 'btn-group-vertical';
+			let rowWidth;
+			try {
+				rowWidth = computeRowWidth(dimensions.width);
+			} catch (e) {
+				return <ErrorMessage>{e + ''}</ErrorMessage>;
+			}
 			const boxHtml = (
-				<div className='p-5'>
+				<div className={classNames(rowWidth)}>
 					<div className={classNames(classForBoxRow)}>{boxRows[0]}</div>
 					<div className={classNames(classForBoxRow)}>{boxRows[1]}</div>
 					<div className={classNames(classForBoxRow)}>{boxRows[2]}</div>
@@ -51,8 +68,9 @@ const createBoard = (
 	for (let j = 0; j < 3; j++) {
 		res.push(<div>{boxes.slice(j * 3, j * 3 + 3)}</div>);
 	}
+	console.log(dimensions.width);
 	return (
-		<div className='row row-cols-3'>
+		<div className='row row-cols-auto'>
 			{res}
 			<Modal
 				isOpen={state.board.isValid()}
@@ -80,27 +98,27 @@ const createBoard = (
 						router.push('/main-menu');
 					}}
 				>
-					You solved the puzzle! Click me to return to main-menu
+					You solved the puzzle! Click me to return to the main-menu
 				</Button>
 			</Modal>
 		</div>
 	);
 };
 
-interface Props {
-	board: SudokuBoard;
-}
-
-export interface State {
-	board: SudokuBoard;
-}
-
-const Board = (props: Props) => {
-	const [state, setState] = useState<State>({
-		board: props.board,
-	});
-	const boardHtml = createBoard(state, setState, useRouter());
-	return boardHtml;
+const computeRowWidth = (windowWidth: number): string => {
+	if (windowWidth < 360) {
+		throw 'Your screen is too small!';
+	}
+	if (windowWidth < 400) {
+		return 'px-0 py-1';
+	}
+	if (windowWidth < 500) {
+		return 'p-1';
+	}
+	if (windowWidth < 650) {
+		return 'p-2';
+	}
+	return 'p-5';
 };
 
 export default Board;

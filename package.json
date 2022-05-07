@@ -7,9 +7,7 @@
     "dev": "next dev",
     "prebuild": "npm run setup",
     "build": "next build",
-    "prestart": "npm run setup",
     "start": "next start",
-    "prelint": "npm run setup",
     "lint": "next lint",
     "setup": "tsc --build setup.tsconfig.json && node ./setupOut/cleanup.js && node ./setupOut/setup.js"
   },

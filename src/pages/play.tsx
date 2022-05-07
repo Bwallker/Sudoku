@@ -2,16 +2,19 @@ import { Difficulty, isDifficulty, useDifficulty } from '../util/useDifficulty';
 import CentralElement from '../components/CentralElement';
 import generateBoard from '../modules/generateBoard';
 import Board from '../components/Board';
+import ErrorMessage from '../util/ErrorMessage';
 
 const Play = () => {
 	const difficultyObj = useDifficulty();
 	if (!difficultyObj.successful) {
-		return displayErrorMessage(difficultyObj.errorMessage);
+		return <ErrorMessage>{difficultyObj.errorMessage}</ErrorMessage>;
 	}
 	const difficulty = difficultyObj.difficulty;
 	if (!isDifficulty(difficulty)) {
-		return displayErrorMessage(
-			'The difficulty you provided was not recognised',
+		return (
+			<ErrorMessage>
+				The difficulty you provided was not recognised
+			</ErrorMessage>
 		);
 	}
 	const board = generateBoard(numberOfPrefilledDigits(difficulty));
@@ -32,13 +35,5 @@ const numberOfPrefilledDigits = (difficulty: Difficulty) => {
 			return 30;
 	}
 };
-
-export const displayErrorMessage = (message: string) => (
-	<CentralElement className='bg-black'>
-		<h1 className='text-warning' style={{ fontSize: '3vw' }}>
-			{message}
-		</h1>
-	</CentralElement>
-);
 
 export default Play;
